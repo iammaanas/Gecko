@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Timeline — Gecko Lab</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/layout.js"></script>
+<script>
+document.getElementById("page-content").innerHTML = `
+<div class="page-hero">
+  <div class="ph-top">
+    <span class="tag tag-teal">05 / History</span>
+    <span class="tag tag-amber">2000 → 2021</span>
+  </div>
+  <h1>Two Decades of <em>Discovery</em></h1>
+  <p style="max-width:580px">
+    From the first force measurement of a single seta in 2000 to NASA deploying gecko grippers
+    aboard the ISS in 2021 — a timeline of the experiments, papers, and prototypes that turned
+    a lizard's foot into a new field of engineering.
+  </p>
+</div>
+
+<div class="timeline">
+
+  <div class="tl-item reveal">
+    <div class="tl-dot"></div>
+    <div class="tl-year">2000</div>
+    <div class="tl-card">
+      <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.7rem">
+        <h2>First Direct Seta Force Measurement</h2>
+        <span class="tag tag-teal" style="flex-shrink:0">Fundamental</span>
+      </div>
+      <p>
+        Kellar Autumn, Robert Full, and colleagues at UC Berkeley used a micro-fabricated force sensor
+        to measure the adhesive force of a single isolated seta for the first time. A single seta produced
+        up to <strong style="color:var(--t1)">200 µN shear force</strong> (194 µN measured, ~40 µN normal) — far more than expected from capillary or suction models.
+        The data pointed unmistakably to van der Waals interactions as the primary mechanism.
+      </p>
+      <div class="tl-ref">
+        Nature (2000) — Autumn et al. ·
+        <a href="https://www.nature.com/articles/35079073" target="_blank">↗ doi:10.1038/35079073</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="tl-item reveal">
+    <div class="tl-dot"></div>
+    <div class="tl-year">2002</div>
+    <div class="tl-card">
+      <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.7rem">
+        <h2>Van der Waals Mechanism Confirmed</h2>
+        <span class="tag tag-teal" style="flex-shrink:0">Fundamental</span>
+      </div>
+      <p>
+        Autumn's team published conclusive evidence in PNAS. By measuring adhesion on hydrophobic and
+        hydrophilic surfaces — eliminating water-based capillary forces — they proved the mechanism is
+        purely physical. Setae adhere equally well in air, vacuum, and nitrogen: a critical result for
+        space applications. This paper is the foundation of the entire field.
+      </p>
+      <div class="tl-ref">
+        PNAS (2002) — Autumn et al. ·
+        <a href="https://www.pnas.org/doi/10.1073/pnas.192252799" target="_blank">↗ doi:10.1073/pnas.192252799</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="tl-item reveal">
+    <div class="tl-dot"></div>
+    <div class="tl-year">2005</div>
+    <div class="tl-card">
+      <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.7rem">
+        <h2>Stickybot — First Gecko Climbing Robot</h2>
+        <span class="tag tag-blue" style="flex-shrink:0">Robotics</span>
+      </div>
+      <p>
+        Mark Cutkosky's lab at Stanford University built Stickybot: a four-limbed robot with directional
+        synthetic setae on each foot. It scaled smooth glass and acrylic at ~3 cm/s. The directional
+        design was key — setae loaded parallel to the surface adhered; rolling the foot peeled them
+        off cleanly. This directional control remains the defining engineering challenge of the field.
+      </p>
+      <div class="tl-ref">
+        Stanford BDML · <a href="https://news.mit.edu/2009/stickybot-092509" target="_blank">↗ MIT News coverage</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="tl-item reveal">
+    <div class="tl-dot"></div>
+    <div class="tl-year">2006</div>
+    <div class="tl-card">
+      <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.7rem">
+        <h2>Self-Cleaning Mechanism Explained</h2>
+        <span class="tag tag-teal" style="flex-shrink:0">Biology</span>
+      </div>
+      <p>
+        PNAS study by Hansen et al. showed that gecko setae are self-cleaning: contaminant particles
+        preferentially transfer from setae to surfaces during normal locomotion. The thermodynamic
+        driving force is that particles have higher adhesion energy to most surfaces than to hydrophobic
+        β-keratin. This passive self-cleaning is still unmatched in synthetic systems.
+      </p>
+      <div class="tl-ref">
+        PNAS (2005) — Hansen et al. ·
+        <a href="https://www.pnas.org/doi/10.1073/pnas.0408424102" target="_blank">↗ doi:10.1073/pnas.0408424102</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="tl-item reveal">
+    <div class="tl-dot"></div>
+    <div class="tl-year">2008</div>
+    <div class="tl-card">
+      <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.7rem">
+        <h2>Harvard Gecko Medical Bandage</h2>
+        <span class="tag tag-green" style="flex-shrink:0">Medicine</span>
+      </div>
+      <p>
+        Researchers at Harvard's Langer Lab created gecko-inspired PGSA micropillar bandages that adhere
+        to wet tissue without stitches or staples. The pillars deform to conform to tissue topology,
+        generating van der Waals contact across a wet interface — something previously considered
+        impossible. Biodegradable, pain-free removal, no inflammatory response.
+      </p>
+      <div class="tl-ref">
+        Nature Materials (2008) · <a href="https://www.nature.com/search?q=gecko+bandage+harvard" target="_blank">↗ Nature Search</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="tl-item reveal">
+    <div class="tl-dot"></div>
+    <div class="tl-year">2012</div>
+    <div class="tl-card">
+      <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.7rem">
+        <h2>Geckskin™ — 317 kg from a 3×4 inch Patch</h2>
+        <span class="tag tag-amber" style="flex-shrink:0">Material</span>
+      </div>
+      <p>
+        Alfred Crosby and Duncan Irschick at UMass Amherst published Geckskin — a novel adhesive
+        that replicates the <em>tendon geometry</em> of a gecko foot, not just the setae. A stiff woven
+        fabric embedded in soft elastomer spreads stress across the entire pad rather than concentrating
+        it at edges. A 3×4 inch patch held <strong style="color:var(--t1)">317 kg on glass</strong> and peeled clean.
+        Still the strongest reversible dry adhesive ever demonstrated.
+      </p>
+      <div class="tl-ref">
+        Advanced Materials (2012) · <a href="https://www.umass.edu/newsoffice/article/geckskin-sticks-hauls-700-pounds-glass" target="_blank">↗ UMass News</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="tl-item reveal">
+    <div class="tl-dot"></div>
+    <div class="tl-year">2019</div>
+    <div class="tl-card">
+      <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.7rem">
+        <h2>NASA Astrobee — ISS Deployment</h2>
+        <span class="tag tag-purple" style="flex-shrink:0">Space</span>
+      </div>
+      <p>
+        NASA's Astrobee free-flying robot, deployed to the ISS in April 2019, incorporated
+        gecko-inspired adhesive pads for surface anchoring and payload handling. The first operational
+        use of gecko adhesion in actual space flight — validating two decades of lab work. Astrobee
+        assists astronauts with cargo transport, experiment monitoring, and facility maintenance.
+      </p>
+      <div class="tl-ref">
+        NASA · <a href="https://www.nasa.gov/astrobee/" target="_blank">↗ nasa.gov/astrobee</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="tl-item reveal">
+    <div class="tl-dot"></div>
+    <div class="tl-year">2021</div>
+    <div class="tl-card">
+      <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.7rem">
+        <h2>NASA Gecko Grippers — ISS Tests</h2>
+        <span class="tag tag-purple" style="flex-shrink:0">Space</span>
+      </div>
+      <p>
+        NASA tested dedicated gecko-adhesive robotic end-effectors aboard the ISS — grippers
+        designed specifically for satellite servicing and debris capture. The grippers conformed
+        to curved satellite surfaces without requiring precise alignment, operating effectively
+        in full vacuum and across temperature extremes of −150°C to +120°C. A major step toward
+        practical on-orbit servicing missions.
+      </p>
+      <div class="tl-ref">
+        NASA · <a href="https://www.nasa.gov/missions/station/gecko-grippers-moving-on-up/" target="_blank">↗ nasa.gov/gecko-grippers</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+`;
+</script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>About — Gecko Lab</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}
+    .member-card {
+      background:var(--bg-l1);border:1px solid var(--border);
+      border-radius:var(--r2);padding:1.6rem;
+      transition:.3s var(--ease);text-align:center;
+    }
+    .member-card:hover{border-color:var(--border-2);box-shadow:var(--teal-glow);transform:translateY(-3px)}
+    .member-avatar {
+      width:64px;height:64px;border-radius:50%;margin:0 auto 1rem;
+      background:linear-gradient(135deg,var(--teal-dim),rgba(42,180,255,.12));
+      border:2px solid var(--border-2);
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.5rem;
+    }
+    .member-id{font-family:var(--fm);font-size:.6rem;letter-spacing:.12em;color:var(--teal);margin-bottom:.3rem}
+    .member-name{font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--t1);margin-bottom:.2rem}
+    .member-role{font-family:var(--fm);font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
+
+    .spec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.8rem;margin-top:1rem}
+    .spec-item{
+      background:rgba(0,0,0,.2);border:1px solid var(--border);
+      border-radius:var(--r1);padding:.9rem 1rem;
+    }
+    .spec-item .sk{font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:.4rem;display:block}
+    .spec-item .sv{font-family:var(--fb);font-size:.9rem;color:var(--t1)}
+
+    .tech-chips{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem}
+
+    /* platform feature list */
+    .feature-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.8rem;margin-top:1rem}
+    .feature-item{
+      display:flex;gap:.9rem;align-items:flex-start;
+      background:var(--bg-l1);border:1px solid var(--border);
+      border-radius:var(--r2);padding:1.1rem 1.2rem;
+      transition:.25s;
+    }
+    .feature-item:hover{border-color:var(--border-2)}
+    .feature-icon{font-size:1.3rem;flex-shrink:0;margin-top:.1rem}
+    .feature-title{font-size:.9rem;font-weight:500;color:var(--t1);margin-bottom:.25rem}
+    .feature-desc{font-size:.8rem;color:var(--t3);line-height:1.5}
+  </style>
+</head>
+<body>
+<script src="js/layout.js"></script>
+<script>
+document.getElementById("page-content").innerHTML = `
+<div class="page-hero">
+  <div class="ph-top">
+    <span class="tag tag-teal">08 / Project</span>
+    <span class="tag tag-amber">Academic Research</span>
+  </div>
+  <h1>About <em>This Project</em></h1>
+  <p style="max-width:600px">
+    A biomimicry research platform built for an academic study on gecko-inspired adhesive systems.
+    Designed to make the underlying science accessible, interactive, and honest about what we know
+    and what we don't.
+  </p>
+</div>
+
+<div class="section-rule reveal"><span>The Team</span></div>
+
+<div class="team-grid reveal">
+  <div class="member-card">
+    <div class="member-avatar">🦎</div>
+    <div class="member-id">I085</div>
+    <div class="member-name">Maanas Vinze</div>
+    <div class="member-role">Platform &amp; Simulation</div>
+  </div>
+  <div class="member-card">
+    <div class="member-avatar">🔬</div>
+    <div class="member-id">I053</div>
+    <div class="member-name">Maanya Oberoi</div>
+    <div class="member-role">Research &amp; Biology</div>
+  </div>
+  <div class="member-card">
+    <div class="member-avatar">⚛️</div>
+    <div class="member-id">I—</div>
+    <div class="member-name">Jay</div>
+    <div class="member-role">Physics &amp; Mechanism</div>
+  </div>
+  <div class="member-card">
+    <div class="member-avatar">📐</div>
+    <div class="member-id">I—</div>
+    <div class="member-name">Aditya</div>
+    <div class="member-role">Applications &amp; Data</div>
+  </div>
+  <div class="member-card">
+    <div class="member-avatar">🚀</div>
+    <div class="member-id">I—</div>
+    <div class="member-name">Geet</div>
+    <div class="member-role">Timeline &amp; Future</div>
+  </div>
+</div>
+
+<div class="section-rule reveal"><span>Project Scope</span></div>
+
+<div class="callout reveal">
+  <h2>What this platform is</h2>
+  <p>
+    An interactive research platform documenting the science, engineering, and future potential of
+    gecko-inspired adhesive systems. Built as an academic deliverable — every claim is sourced to
+    peer-reviewed literature, every simulation uses physics values from published studies. The goal
+    is to demonstrate that biology contains solutions that engineering is still learning to replicate.
+  </p>
+</div>
+
+<div class="spec-grid reveal">
+  <div class="spec-item">
+    <span class="sk">Subject</span>
+    <span class="sv">Gecko Biomimicry / Adhesive Systems</span>
+  </div>
+  <div class="spec-item">
+    <span class="sk">Discipline</span>
+    <span class="sv">Biology · Materials Science · Engineering</span>
+  </div>
+  <div class="spec-item">
+    <span class="sk">Papers cited</span>
+    <span class="sv">9 peer-reviewed sources</span>
+  </div>
+  <div class="spec-item">
+    <span class="sk">Simulation data</span>
+    <span class="sv">Sourced from Autumn 2002, ASTM D1002, Velcro Industries</span>
+  </div>
+  <div class="spec-item">
+    <span class="sk">Date range</span>
+    <span class="sv">2000–2021 literature</span>
+  </div>
+  <div class="spec-item">
+    <span class="sk">Format</span>
+    <span class="sv">Interactive web platform + presentation</span>
+  </div>
+</div>
+
+<div class="section-rule reveal"><span>Platform Features</span></div>
+
+<div class="feature-list">
+  <div class="feature-item reveal">
+    <span class="feature-icon">⚛️</span>
+    <div>
+      <div class="feature-title">Van der Waals Explorer</div>
+      <div class="feature-desc">Interactive F ∝ 1/r⁶ visualization with real-time micro-contact simulation and adhesion index calculation.</div>
+    </div>
+  </div>
+  <div class="feature-item reveal reveal-delay-1">
+    <span class="feature-icon">🔬</span>
+    <div>
+      <div class="feature-title">Setae 3D Scroll Model</div>
+      <div class="feature-desc">Scroll-driven zoom from gecko toe → lamellae → setae field → spatulae fan → van der Waals molecules at 0.5 nm.</div>
+    </div>
+  </div>
+  <div class="feature-item reveal reveal-delay-2">
+    <span class="feature-icon">📐</span>
+    <div>
+      <div class="feature-title">Multi-Adhesive Simulation</div>
+      <div class="feature-desc">5 adhesive types compared under real loads. Gecko, tape, velcro, super glue, suction cup — with peer-reviewed σ values and per-environment physics.</div>
+    </div>
+  </div>
+  <div class="feature-item reveal">
+    <span class="feature-icon">🔍</span>
+    <div>
+      <div class="feature-title">Searchable Research Archive</div>
+      <div class="feature-desc">9 key papers with live keyword search, discipline filter, pull quotes, and direct DOI links.</div>
+    </div>
+  </div>
+  <div class="feature-item reveal reveal-delay-1">
+    <span class="feature-icon">📅</span>
+    <div>
+      <div class="feature-title">Annotated Timeline</div>
+      <div class="feature-desc">8 milestones from 2000–2021 with full experimental context, significance, and primary literature references.</div>
+    </div>
+  </div>
+  <div class="feature-item reveal reveal-delay-2">
+    <span class="feature-icon">🔭</span>
+    <div>
+      <div class="feature-title">Technology Readiness Levels</div>
+      <div class="feature-desc">Future directions mapped to NASA TRL scale — from early CNT research (TRL 2) to near-commercial inspection robots (TRL 6–7).</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-rule reveal"><span>Built With</span></div>
+<div class="card reveal" style="padding:1.4rem 1.8rem">
+  <div class="tech-chips">
+    <span class="tag tag-teal">Vanilla JS</span>
+    <span class="tag tag-blue">Canvas 2D API</span>
+    <span class="tag tag-amber">CSS Custom Properties</span>
+    <span class="tag tag-purple">Fraunces (Variable Serif)</span>
+    <span class="tag tag-green">JetBrains Mono</span>
+    <span class="tag tag-teal">DM Sans</span>
+    <span class="tag tag-blue">IntersectionObserver</span>
+    <span class="tag tag-amber">No frameworks · No dependencies</span>
+  </div>
+  <p style="margin-top:1rem;font-size:.84rem">
+    All simulations, animations, and visualizations use the browser's native Canvas 2D API —
+    no WebGL, no Three.js, no external libraries. Physics values are hardcoded from published literature
+    and cited inline in the simulation source.
+  </p>
+</div>
+`;
+</script>
+</body>
+</html>

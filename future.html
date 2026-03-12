@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Future Potential — Gecko Lab</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .progress-bar-wrap{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:.8rem;overflow:hidden}
+    .progress-bar-fill{height:100%;border-radius:2px;transition:.4s}
+    .readiness-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem}
+    .readiness-lbl{font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
+    .readiness-val{font-family:var(--fm);font-size:.62rem;font-weight:700}
+  </style>
+</head>
+<body>
+<script src="js/layout.js"></script>
+<script>
+document.getElementById("page-content").innerHTML = `
+<div class="page-hero">
+  <div class="ph-top">
+    <span class="tag tag-teal">06 / Frontier</span>
+    <span class="tag tag-blue">Active Research</span>
+  </div>
+  <h1>The Next <em>Decade</em></h1>
+  <p style="max-width:600px">
+    Gecko adhesion research is just beginning relative to what it could become.
+    Current synthetic setae are orders of magnitude cruder than the biological original —
+    but that gap is closing fast.
+  </p>
+</div>
+
+<div class="section-rule"><span>Emerging Directions</span></div>
+<div class="future-grid">
+
+  <div class="future-card reveal">
+    <div class="fi">🧬</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+      <h2>Carbon Nanotube Setae</h2>
+      <span class="status-badge tag tag-blue">Active Research</span>
+    </div>
+    <p>
+      Carbon nanotubes (~1 nm diameter) match natural spatulae scale and have the highest surface-area-to-mass
+      ratio of any known material. Aligned CNT forests grown on flexible substrates mimic gecko foot geometry
+      with adhesion strength up to 10× current polymer setae — and electrostatically self-clean when a
+      small voltage is applied.
+    </p>
+    <div class="readiness-row">
+      <span class="readiness-lbl">Technology Readiness</span>
+      <span class="readiness-val" style="color:var(--blue)">TRL 3–4</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:35%;background:var(--blue)"></div></div>
+  </div>
+
+  <div class="future-card reveal reveal-delay-1">
+    <div class="fi">🤖</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+      <h2>Smart Switchable Adhesion</h2>
+      <span class="status-badge tag tag-amber">Emerging</span>
+    </div>
+    <p>
+      Next-gen gecko tape will toggle between adhesive and non-adhesive states via electrical signal,
+      temperature, humidity, or UV light — enabling robotic grippers that switch grip on demand without
+      mechanical actuation. Several groups have demonstrated voltage-controlled switching in liquid crystal
+      elastomers and shape-memory polymers with setae geometry.
+    </p>
+    <div class="readiness-row">
+      <span class="readiness-lbl">Technology Readiness</span>
+      <span class="readiness-val" style="color:var(--amber)">TRL 2–3</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:22%;background:var(--amber)"></div></div>
+  </div>
+
+  <div class="future-card reveal reveal-delay-2">
+    <div class="fi">🏥</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+      <h2>Injectable Tissue Adhesives</h2>
+      <span class="status-badge tag tag-blue">Active Research</span>
+    </div>
+    <p>
+      Building on Harvard's PGSA bandage, researchers are developing injectable biodegradable nano-pillar
+      adhesives that cure in situ to seal internal surgical wounds without sutures — reducing inflammation,
+      infection risk, and recovery time. Especially promising for gastrointestinal surgery, where traditional
+      sutures are difficult and chemical glues cause tissue death.
+    </p>
+    <div class="readiness-row">
+      <span class="readiness-lbl">Technology Readiness</span>
+      <span class="readiness-val" style="color:var(--blue)">TRL 3</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:28%;background:var(--blue)"></div></div>
+  </div>
+
+  <div class="future-card reveal">
+    <div class="fi">🛸</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+      <h2>Orbital Debris Capture</h2>
+      <span class="status-badge tag tag-amber">Emerging</span>
+    </div>
+    <p>
+      27,000+ tracked debris objects orbit Earth at speeds up to 28,000 km/h. Gecko-adhesive grippers on
+      deorbit vehicles could capture tumbling debris without the mechanical grappling arms that require
+      precise approach geometry. NASA and ESA's active debris removal programs are evaluating gecko
+      adhesion alongside harpoon and net technologies.
+    </p>
+    <div class="readiness-row">
+      <span class="readiness-lbl">Technology Readiness</span>
+      <span class="readiness-val" style="color:var(--amber)">TRL 4–5</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:42%;background:var(--amber)"></div></div>
+  </div>
+
+  <div class="future-card reveal reveal-delay-1">
+    <div class="fi">🏗️</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+      <h2>Inspection Robots</h2>
+      <span class="status-badge tag tag-green">Early Commercial</span>
+    </div>
+    <p>
+      Gecko-adhesive climbing robots are closest to commercial deployment in building inspection.
+      Several startups now offer wall-climbing inspection drones with gecko-type pads for skyscraper
+      facades, bridge piers, and wind turbine blades — replacing human rope-access workers in
+      hazardous environments at a fraction of the cost.
+    </p>
+    <div class="readiness-row">
+      <span class="readiness-lbl">Technology Readiness</span>
+      <span class="readiness-val" style="color:var(--green)">TRL 6–7</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:62%;background:var(--green)"></div></div>
+  </div>
+
+  <div class="future-card reveal reveal-delay-2">
+    <div class="fi">💡</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+      <h2>AI-Optimized Setae Design</h2>
+      <span class="status-badge tag tag-blue">Active Research</span>
+    </div>
+    <p>
+      Machine learning is being applied to optimize setae geometry — angle, tip shape, density,
+      and material — for specific surfaces and loading conditions. Physics-informed neural networks
+      can simulate adhesion across thousands of setae configurations in hours, compressing the design
+      cycle from years of physical fabrication and testing to weeks of simulation-guided iteration.
+    </p>
+    <div class="readiness-row">
+      <span class="readiness-lbl">Technology Readiness</span>
+      <span class="readiness-val" style="color:var(--blue)">TRL 2</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:18%;background:var(--blue)"></div></div>
+  </div>
+
+</div>
+
+<div class="section-rule reveal"><span>Current Challenges</span></div>
+
+<div class="card reveal" style="border-color:rgba(255,82,82,.15);background:linear-gradient(135deg,rgba(255,82,82,.05),rgba(255,82,82,.01))">
+  <h2 style="color:var(--red);font-size:1.1rem;margin-bottom:1rem">What's holding gecko adhesives back</h2>
+  <div style="display:flex;flex-direction:column;gap:.55rem">
+    ${[
+      ["Manufacturing cost","Nanofabrication of precise setae arrays: $1,000+/cm² vs. $0.001 for tape. The cost gap is 6 orders of magnitude."],
+      ["Scalability","Most demonstrations use cm²-scale patches. Scaling to m² without defects, delamination, or performance loss is unsolved."],
+      ["Durability","Synthetic setae degrade significantly after thousands of cycles. Natural gecko feet self-clean and regenerate keratin — synthetics cannot."],
+      ["Surface sensitivity","Performance drops sharply on dusty, oily, or highly textured surfaces. The adhesion index falls below viable thresholds for most real-world substrates."],
+      ["Temperature extremes","Many polymer setae deform above 80°C or embrittle below −40°C, limiting use in space and high-performance industrial settings."],
+      ["Self-cleaning","Geckos recover adhesion by dragging their feet — particles preferentially transfer to surfaces. Synthetic materials lack equivalent recovery mechanisms."],
+    ].map(([h,b]) => `
+      <div style="display:flex;gap:.9rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.04)">
+        <span style="color:var(--red);font-family:var(--fm);font-size:.8rem;flex-shrink:0;margin-top:.15rem">—</span>
+        <div>
+          <strong style="color:var(--t1);font-size:.9rem">${h}:</strong>
+          <span style="color:var(--t2);font-size:.88rem"> ${b}</span>
+        </div>
+      </div>`).join('')}
+  </div>
+</div>
+
+<div class="callout reveal">
+  <h2>The 10-Year Outlook</h2>
+  <p>
+    Commercial gecko adhesives for niche high-value applications — space, medical, precision manufacturing —
+    are <strong style="color:var(--t1)">5–10 years away</strong> at current trajectories. Mass-market applications
+    require a breakthrough in scalable nanofabrication, possibly through self-assembly or roll-to-roll
+    nanolithography. The biological template — 200 million years in the making — remains significantly
+    ahead of the best synthetic versions. That gap is the entire research frontier.
+  </p>
+</div>
+`;
+</script>
+</body>
+</html>

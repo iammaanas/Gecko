@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gecko Zoom Model — Hierarchical Adhesion Visualizer</title>
+  <!--
+    ═══════════════════════════════════════════════════════════════
+    GECKO ZOOM MODEL  —  Self-Contained Visualization Module
+    Embeds via: <div id="gecko-zoom-model"></div>
+    No global CSS is modified. All styles are scoped inline.
+    ═══════════════════════════════════════════════════════════════
+  -->
+</head>
+<body style="margin:0;background:#02080f;display:flex;align-items:center;justify-content:center;min-height:100vh">
+
+<!-- ═══════════════════════════════════════════════════════════
+     EMBED THIS DIV INTO YOUR EXISTING PAGE
+     Everything else is handled by the script below.
+════════════════════════════════════════════════════════════ -->
+<div id="gecko-zoom-model"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   GECKO HIERARCHICAL ZOOM VISUALIZER
+   Self-contained module. Mounts into #gecko-zoom-model.
+   No global styles modified. All rendering via Canvas 2D API.
+
+   ZOOM LEVELS:
+     0.0 – 1.5  →  Level 1: Gecko foot on surface
+     1.5 – 3.0  →  Level 2: Lamellae (parallel ridges)
+     3.0 – 6.0  →  Level 3: Setae (hair-like fibres)
+     6.0 – 10.0 →  Level 4: Spatulae (nanoscale tips)
+════════════════════════════════════════════════════════════ */
+
+(function GeckoZoomModel() {
+
+  // ── 1. INITIALIZATION ───────────────────────────────────────────
+  const container = document.getElementById('gecko-zoom-model');
+  if (!container) { console.error('GeckoZoomModel: #gecko-zoom-model not found'); return; }
+
+  // Root wrapper (scoped, does not touch global DOM)
+  const root = document.createElement('div');
+  root.style.cssText = [
+    'position:relative',
+    'width:100%',
+    'max-width:900px',
+    'margin:0 auto',
+    'background:#03101a',
+    'border-radius:18px',
+    'overflow:hidden',
+    'user-select:none',
+    'touch-action:none',
+    'font-family:"JetBrains Mono","Courier New",monospace',
+  ].join(';');
+  container.appendChild(root);
+
+  // Canvas
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'display:block;width:100%;cursor:ns-resize';
+  root.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  // ── 2. STATE ────────────────────────────────────────────────────
+  const S = {
+    zoom:        1.0,      // current zoom (1 – 10)
+    zoomTarget:  1.0,      // lerp target
+    zoomMin:     1.0,
+    zoomMax:     10.0,
+    W: 0, H: 0, dpr: 1,
+    t: 0,                  // animation time
+    dragging: false,
+    lastY: 0,
+    pinchDist: 0,
+  };
+
+  // Pre-seeded geometry (generated once, reused every frame)
+  const GEO = {
+    setae:    [],  // {x,y,len,angle,wobble}
+    spatulae: [],  // {bx,by,angle,tipW,tipH}
+    lamellae: [],  // {y,h,shade}
+  };
+
+  // ── 3. ZOOM LEVELS ──────────────────────────────────────────────
+  const LEVELS = [
+    { zoom: 1.0, label: 'Gecko Foot',        sub: 'Macroscopic view — ~2 cm wide' },
+    { zoom: 1.5, label: 'Lamellae Ridges',   sub: 'Parallel ridges — ~100–500 μm each' },
+    { zoom: 3.0, label: 'Microscopic Setae', sub: 'Hair-like fibres — ~100 μm tall, β-keratin' },
+    { zoom: 6.0, label: 'Spatula Tips',      sub: 'Nanoscale pads — ~200 nm, van der Waals contact' },
+  ];
+
+  function getLevelIndex(z) {
+    let idx = 0;
+    for (let i = 0; i < LEVELS.length; i++) {
+      if (z >= LEVELS[i].zoom) idx = i;
+    }
+    return idx;
+  }
+
+  // Progress within a level [0,1]
+  function getLevelProgress(z) {
+    const idx = getLevelIndex(z);
+    const lo = LEVELS[idx].zoom;
+    const hi = idx < LEVELS.length - 1 ? LEVELS[idx + 1].zoom : S.zoomMax;
+    return Math.min(1, (z - lo) / (hi - lo));
+  }
+
+  // ── 4. GEOMETRY SEED ────────────────────────────────────────────
+  function seedGeometry() {
+    const W = S.W, H = S.H;
+    const surfY = H * 0.62;
+
+    // Lamellae (10–14 ridges)
+    GEO.lamellae = [];
+    const n = 12;
+    for (let i = 0; i < n; i++) {
+      GEO.lamellae.push({
+        y:     surfY - (H * 0.28) * (i / n),
+        h:     H * 0.018 + Math.random() * H * 0.006,
+        shade: 0.6 + i / n * 0.4,
+      });
+    }
+
+    // Setae — 240 hairs distributed across lamellae
+    GEO.setae = [];
+    const setaCount = 260;
+    for (let i = 0; i < setaCount; i++) {
+      const lam = GEO.lamellae[Math.floor(Math.random() * GEO.lamellae.length)];
+      GEO.setae.push({
+        x:      W * 0.18 + Math.random() * W * 0.64,
+        y:      lam.y,
+        len:    H * 0.055 + Math.random() * H * 0.03,
+        angle:  -Math.PI / 2 + (Math.random() - 0.5) * 0.45,
+        wobble: Math.random() * Math.PI * 2,
+        speed:  0.6 + Math.random() * 0.8,
+      });
+    }
+
+    // Spatulae — 3–5 tips per seta
+    GEO.spatulae = [];
+    for (const seta of GEO.setae) {
+      const tipCount = 3 + Math.floor(Math.random() * 3);
+      for (let t = 0; t < tipCount; t++) {
+        const spread = (t / (tipCount - 1) - 0.5) * 0.55;
+        const finalAngle = seta.angle + spread;
+        GEO.spatulae.push({
+          parentX:  seta.x,
+          parentY:  seta.y,
+          parentLen:seta.len,
+          parentAng:seta.angle,
+          spread,
+          angle:    finalAngle,
+          tipW:     H * 0.012 + Math.random() * H * 0.006,
+          tipH:     H * 0.006 + Math.random() * H * 0.003,
+        });
+      }
+    }
+  }
+
+  // ── 5. RESIZE ───────────────────────────────────────────────────
+  function resize() {
+    S.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = root.getBoundingClientRect();
+    S.W = rect.width  || 900;
+    S.H = S.W * 0.58;          // 16:9-ish aspect
+    canvas.style.height = S.H + 'px';
+    canvas.width  = Math.round(S.W * S.dpr);
+    canvas.height = Math.round(S.H * S.dpr);
+    ctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+    seedGeometry();
+  }
+  window.addEventListener('resize', resize);
+  setTimeout(resize, 0);
+
+  // ── 6. ZOOM CONTROLLER ──────────────────────────────────────────
+  function applyZoom(delta) {
+    S.zoomTarget = Math.max(S.zoomMin, Math.min(S.zoomMax, S.zoomTarget + delta));
+  }
+
+  // Mouse wheel
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.22 : 0.22;
+    applyZoom(delta);
+  }, { passive: false });
+
+  // Drag (mouse / touch) — vertical drag = zoom
+  canvas.addEventListener('mousedown', e => { S.dragging = true; S.lastY = e.clientY; });
+  window.addEventListener('mouseup',   ()  => { S.dragging = false; });
+  window.addEventListener('mousemove', e  => {
+    if (!S.dragging) return;
+    const dy = S.lastY - e.clientY;
+    S.lastY = e.clientY;
+    applyZoom(dy * 0.012);
+  });
+
+  // Touch — drag
+  canvas.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) { S.dragging = true; S.lastY = e.touches[0].clientY; }
+    if (e.touches.length === 2) {
+      S.dragging = false;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      S.pinchDist = Math.sqrt(dx*dx + dy*dy);
+    }
+  }, { passive: true });
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 1 && S.dragging) {
+      const dy = S.lastY - e.touches[0].clientY;
+      S.lastY = e.touches[0].clientY;
+      applyZoom(dy * 0.012);
+    }
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const delta = (dist - S.pinchDist) * 0.018;
+      S.pinchDist = dist;
+      applyZoom(delta);
+    }
+  }, { passive: false });
+  canvas.addEventListener('touchend', () => { S.dragging = false; });
+
+  // ── 7. UI OVERLAY ───────────────────────────────────────────────
+  // Zoom buttons
+  const btnWrap = document.createElement('div');
+  btnWrap.style.cssText = [
+    'position:absolute',
+    'bottom:14px',
+    'right:14px',
+    'display:flex',
+    'flex-direction:column',
+    'gap:6px',
+    'z-index:10',
+  ].join(';');
+
+  function mkBtn(label, delta) {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = [
+      'width:36px',
+      'height:36px',
+      'border-radius:8px',
+      'border:1px solid rgba(0,240,160,.3)',
+      'background:rgba(0,240,160,.08)',
+      'color:#00f0a0',
+      'font-size:1.1rem',
+      'font-family:inherit',
+      'cursor:pointer',
+      'display:flex',
+      'align-items:center',
+      'justify-content:center',
+      'transition:.15s',
+      'backdrop-filter:blur(8px)',
+    ].join(';');
+    b.addEventListener('click', () => applyZoom(delta));
+    b.addEventListener('mouseover', () => { b.style.background='rgba(0,240,160,.2)'; });
+    b.addEventListener('mouseout',  () => { b.style.background='rgba(0,240,160,.08)'; });
+    return b;
+  }
+  btnWrap.appendChild(mkBtn('+', 0.6));
+  btnWrap.appendChild(mkBtn('−', -0.6));
+  root.appendChild(btnWrap);
+
+  // Level dots
+  const dotWrap = document.createElement('div');
+  dotWrap.style.cssText = [
+    'position:absolute',
+    'left:14px',
+    'top:50%',
+    'transform:translateY(-50%)',
+    'display:flex',
+    'flex-direction:column',
+    'gap:8px',
+    'z-index:10',
+  ].join(';');
+
+  const dots = LEVELS.map((lv, i) => {
+    const d = document.createElement('div');
+    d.title = lv.label;
+    d.style.cssText = [
+      'width:8px',
+      'height:8px',
+      'border-radius:50%',
+      'background:rgba(0,240,160,.18)',
+      'border:1px solid rgba(0,240,160,.35)',
+      'cursor:pointer',
+      'transition:all .3s',
+    ].join(';');
+    d.addEventListener('click', () => { S.zoomTarget = lv.zoom + 0.05; });
+    dotWrap.appendChild(d);
+    return d;
+  });
+  root.appendChild(dotWrap);
+
+  // Hint text
+  const hint = document.createElement('div');
+  hint.textContent = '↕  scroll or drag to zoom';
+  hint.style.cssText = [
+    'position:absolute',
+    'bottom:14px',
+    'left:50%',
+    'transform:translateX(-50%)',
+    'color:rgba(0,240,160,.35)',
+    'font-size:.62rem',
+    'letter-spacing:.12em',
+    'text-transform:uppercase',
+    'pointer-events:none',
+    'transition:opacity 1s',
+    'white-space:nowrap',
+  ].join(';');
+  root.appendChild(hint);
+  setTimeout(() => { hint.style.opacity = '0'; }, 3000);
+
+  // ── 8. MATH HELPERS ─────────────────────────────────────────────
+  const lerp  = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const ease  = t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t;   // ease-in-out
+  const fade  = (v, lo, hi) => clamp((v - lo) / (hi - lo), 0, 1);
+
+  // ── 9. DRAWING FUNCTIONS ─────────────────────────────────────────
+
+  /* ── 9a. BACKGROUND ── */
+  function drawBackground(z) {
+    const W = S.W, H = S.H;
+
+    // Sky/depth gradient shifts deeper (green-tinted at max zoom)
+    const depthT = fade(z, 1, 10);
+    const c1 = `rgba(${lerp(3,2,depthT)|0},${lerp(16,22,depthT)|0},${lerp(26,14,depthT)|0},1)`;
+    const c2 = `rgba(${lerp(2,1,depthT)|0},${lerp(8,12,depthT)|0},${lerp(14,8,depthT)|0},1)`;
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, c1); bg.addColorStop(1, c2);
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle dot-grid texture
+    const gridAlpha = fade(z, 1, 5) * 0.06;
+    if (gridAlpha > 0.005) {
+      ctx.strokeStyle = `rgba(0,240,160,${gridAlpha})`;
+      ctx.lineWidth = 0.5;
+      const gs = 40;
+      for (let x = 0; x < W; x += gs) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      for (let y = 0; y < H; y += gs) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+    }
+  }
+
+  /* ── 9b. SURFACE PLANE ── */
+  function drawSurface(z) {
+    const W = S.W, H = S.H;
+    const surfY = H * 0.62;
+
+    // Rough surface texture at high zoom
+    const roughness = fade(z, 3, 8);
+    if (roughness > 0.05) {
+      for (let x = 0; x < W; x += 6) {
+        const bump = Math.sin(x * 0.18) * 3 * roughness;
+        ctx.strokeStyle = `rgba(42,180,255,${0.06 * roughness})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x, surfY + bump); ctx.lineTo(x, surfY + bump + H*0.04); ctx.stroke();
+      }
+    }
+
+    // Main surface gradient
+    const sg = ctx.createLinearGradient(0, surfY, 0, H);
+    sg.addColorStop(0, 'rgba(42,180,255,.22)');
+    sg.addColorStop(0.3, 'rgba(30,110,180,.14)');
+    sg.addColorStop(1, 'rgba(10,40,80,.04)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(0, surfY, W, H - surfY);
+
+    // Glow edge
+    ctx.shadowColor = '#2ab4ff';
+    ctx.shadowBlur  = 12;
+    ctx.strokeStyle = 'rgba(42,180,255,.55)';
+    ctx.lineWidth   = 1.8;
+    ctx.beginPath(); ctx.moveTo(0, surfY); ctx.lineTo(W, surfY); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Surface label at low zoom
+    if (z < 2.5) {
+      const a = fade(2.5 - z, 0, 1);
+      ctx.fillStyle = `rgba(100,190,255,${a * 0.55})`;
+      ctx.font = '11px "JetBrains Mono","Courier New",monospace';
+      ctx.fillText('Glass surface', 16, surfY + 22);
+    }
+  }
+
+  /* ── 9c. GECKO FOOT (Level 1) ── */
+  function drawGeckoFoot(z) {
+    const W = S.W, H = S.H;
+    const surfY = H * 0.62;
+    // Fade out between zoom 1.5 and 2.2
+    const alpha = 1 - ease(fade(z, 1.4, 2.4));
+    if (alpha < 0.005) return;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Foot silhouette — simple organic shape
+    const fx  = W * 0.5;
+    const fw  = Math.min(W * 0.46, 280);
+    const fh  = Math.min(H * 0.42, 220);
+    const fty = surfY - fh;
+
+    // Drop shadow
+    const shad = ctx.createRadialGradient(fx, surfY, 0, fx, surfY, fw * 0.55);
+    shad.addColorStop(0, 'rgba(0,0,0,.38)');
+    shad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = shad;
+    ctx.beginPath(); ctx.ellipse(fx, surfY + 6, fw * 0.44, 14, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Body gradient
+    const fg = ctx.createLinearGradient(fx - fw/2, fty, fx + fw/2, fty + fh);
+    fg.addColorStop(0,   '#2d1f10');
+    fg.addColorStop(0.45,'#1c1309');
+    fg.addColorStop(1,   '#0d0906');
+    ctx.beginPath();
+    ctx.moveTo(fx - fw * 0.38, fty + 4);
+    ctx.bezierCurveTo(fx - fw * 0.05, fty - fh * 0.1, fx + fw * 0.05, fty - fh * 0.1, fx + fw * 0.38, fty + 4);
+    ctx.bezierCurveTo(fx + fw * 0.52, fty + fh * 0.32, fx + fw * 0.5, fty + fh * 0.75, fx + fw * 0.46, surfY - 1);
+    ctx.lineTo(fx - fw * 0.46, surfY - 1);
+    ctx.bezierCurveTo(fx - fw * 0.5, fty + fh * 0.75, fx - fw * 0.52, fty + fh * 0.32, fx - fw * 0.38, fty + 4);
+    ctx.fillStyle = fg; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.04)'; ctx.lineWidth = 1; ctx.stroke();
+
+    // Toe pad — teal glow zone
+    const padH = 24;
+    const pg = ctx.createLinearGradient(0, surfY - padH, 0, surfY);
+    pg.addColorStop(0, 'rgba(0,240,160,.04)');
+    pg.addColorStop(1, 'rgba(0,240,160,.22)');
+    ctx.fillStyle = pg;
+    const padX = fx - fw * 0.43;
+    const padW = fw * 0.86;
+    ctx.beginPath(); ctx.roundRect(padX, surfY - padH, padW, padH, [4, 4, 0, 0]); ctx.fill();
+
+    // Lamellar hint lines on pad
+    ctx.strokeStyle = 'rgba(0,240,160,.16)'; ctx.lineWidth = 0.7;
+    const lc = 10;
+    for (let i = 1; i < lc; i++) {
+      const lx = padX + (padW / lc) * i;
+      ctx.beginPath(); ctx.moveTo(lx, surfY - padH); ctx.lineTo(lx, surfY); ctx.stroke();
+    }
+
+    // Callout
+    ctx.strokeStyle = 'rgba(0,240,160,.4)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(fx + fw * 0.46, surfY - 10); ctx.lineTo(fx + fw * 0.6, surfY - 52); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(0,240,160,.8)'; ctx.font = 'bold 11px "JetBrains Mono","Courier New",monospace';
+    ctx.fillText('Setae pad', fx + fw * 0.6 + 4, surfY - 56);
+    ctx.fillStyle = 'rgba(0,240,160,.45)'; ctx.font = '10px "JetBrains Mono","Courier New",monospace';
+    ctx.fillText('~200,000 setae per toe', fx + fw * 0.6 + 4, surfY - 43);
+
+    ctx.restore();
+  }
+
+  /* ── 9d. LAMELLAE (Level 2) ── */
+  function drawLamellae(z) {
+    const W = S.W, H = S.H;
+    // Fade in from 1.4, fade out to 3.5
+    const fadeIn  = ease(fade(z, 1.3, 2.2));
+    const fadeOut = 1 - ease(fade(z, 3.0, 3.8));
+    const alpha   = fadeIn * fadeOut;
+    if (alpha < 0.005) return;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Zoom morphs the visible region: at low zoom we see many ridges,
+    // at higher zoom we're "inside" seeing fewer up-close
+    const zoomScale = lerp(1, 2.5, ease(fade(z, 1.5, 3.0)));
+    const cx = W / 2, cy = H * 0.5;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(zoomScale, zoomScale);
+    ctx.translate(-cx, -cy);
+
+    for (const lam of GEO.lamellae) {
+      const rg = ctx.createLinearGradient(0, lam.y, 0, lam.y + lam.h * 3);
+      const s  = lam.shade;
+      rg.addColorStop(0,   `rgba(${(0*s)|0},${(240*s)|0},${(160*s)|0},0.52)`);
+      rg.addColorStop(0.4, `rgba(0,${(200*s)|0},${(130*s)|0},0.22)`);
+      rg.addColorStop(1,   `rgba(0,180,110,0.04)`);
+
+      // Ridge body
+      ctx.beginPath();
+      ctx.moveTo(W * 0.1, lam.y + lam.h * 0.5);
+      ctx.bezierCurveTo(W * 0.2, lam.y, W * 0.8, lam.y, W * 0.9, lam.y + lam.h * 0.5);
+      ctx.bezierCurveTo(W * 0.8, lam.y + lam.h, W * 0.2, lam.y + lam.h, W * 0.1, lam.y + lam.h * 0.5);
+      ctx.fillStyle = rg; ctx.fill();
+
+      // Top edge highlight
+      ctx.shadowColor = '#00f0a0'; ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.moveTo(W * 0.1, lam.y + lam.h * 0.5);
+      ctx.bezierCurveTo(W * 0.2, lam.y, W * 0.8, lam.y, W * 0.9, lam.y + lam.h * 0.5);
+      ctx.strokeStyle = `rgba(0,240,160,${0.55 * s})`; ctx.lineWidth = 1.6; ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    ctx.restore(); // un-scale
+
+    // Scale bar
+    ctx.fillStyle = 'rgba(0,240,160,.5)'; ctx.strokeStyle = 'rgba(0,240,160,.4)';
+    ctx.lineWidth = 1.5; ctx.font = '10px "JetBrains Mono","Courier New",monospace';
+    const bx = W - 110, by = H - 30, bw = 70;
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + bw, by);
+    ctx.moveTo(bx, by - 4); ctx.lineTo(bx, by + 4);
+    ctx.moveTo(bx + bw, by - 4); ctx.lineTo(bx + bw, by + 4); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillText('~500 μm', bx + bw/2, by - 8); ctx.textAlign = 'left';
+
+    ctx.restore();
+  }
+
+  /* ── 9e. SETAE (Level 3) ── */
+  function drawSetae(z) {
+    const W = S.W, H = S.H;
+    const fadeIn  = ease(fade(z, 2.8, 4.0));
+    const fadeOut = 1 - ease(fade(z, 5.5, 6.5));
+    const alpha   = fadeIn * fadeOut;
+    if (alpha < 0.005) return;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    const zoomScale = lerp(1, 3.5, ease(fade(z, 3.0, 6.0)));
+    const cx = W / 2, cy = H * 0.5;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(zoomScale, zoomScale);
+    ctx.translate(-cx, -cy);
+
+    // Draw each seta as a curved line
+    for (const seta of GEO.setae) {
+      const wob   = Math.sin(S.t * seta.speed + seta.wobble) * 0.04;
+      const angle = seta.angle + wob;
+      const tx    = seta.x + Math.cos(angle) * seta.len;
+      const ty    = seta.y - Math.sin(Math.abs(angle)) * seta.len;
+
+      // Gradient: teal base → bright tip
+      const sg = ctx.createLinearGradient(seta.x, seta.y, tx, ty);
+      sg.addColorStop(0, 'rgba(0,200,130,.55)');
+      sg.addColorStop(1, 'rgba(0,240,160,.85)');
+
+      ctx.beginPath();
+      ctx.moveTo(seta.x, seta.y);
+      ctx.quadraticCurveTo(
+        seta.x + Math.cos(angle) * seta.len * 0.5 + wob * 8,
+        seta.y - Math.sin(Math.abs(angle)) * seta.len * 0.5,
+        tx, ty
+      );
+      ctx.strokeStyle = sg;
+      ctx.lineWidth   = lerp(0.6, 1.1, Math.random()); // thin fibres
+      ctx.stroke();
+
+      // Tip glow dot
+      if (zoomScale > 1.8) {
+        ctx.shadowColor = '#00f0a0'; ctx.shadowBlur = 4;
+        ctx.fillStyle   = 'rgba(0,240,160,.7)';
+        ctx.beginPath(); ctx.arc(tx, ty, 1.2, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur  = 0;
+      }
+    }
+
+    ctx.restore();
+
+    // Scale bar
+    ctx.fillStyle = 'rgba(0,240,160,.5)'; ctx.strokeStyle = 'rgba(0,240,160,.4)';
+    ctx.lineWidth = 1.5; ctx.font = '10px "JetBrains Mono","Courier New",monospace';
+    const bx = W - 110, by = H - 30, bw = 70;
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + bw, by);
+    ctx.moveTo(bx, by - 4); ctx.lineTo(bx, by + 4);
+    ctx.moveTo(bx + bw, by - 4); ctx.lineTo(bx + bw, by + 4); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillText('~100 μm', bx + bw/2, by - 8); ctx.textAlign = 'left';
+
+    ctx.restore();
+  }
+
+  /* ── 9f. SPATULAE (Level 4) ── */
+  function drawSpatulae(z) {
+    const W = S.W, H = S.H;
+    const alpha = ease(fade(z, 5.8, 7.2));
+    if (alpha < 0.005) return;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    const surfY   = H * 0.62;
+    const zScale  = lerp(2, 5.5, ease(fade(z, 6, 10)));
+    const cx = W / 2, cy = H * 0.5;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(zScale, zScale);
+    ctx.translate(-cx, -cy);
+
+    // Draw a representative cluster of spatulae (not all — performance)
+    // Take every 4th seta to keep count reasonable at high zoom
+    let drawn = 0;
+    for (let si = 0; si < GEO.setae.length; si += 4) {
+      if (drawn > 80) break;
+      const seta = GEO.setae[si];
+
+      // Seta shaft (thin, fading)
+      const tx = seta.x + Math.cos(seta.angle) * seta.len;
+      const ty = seta.y - Math.sin(Math.abs(seta.angle)) * seta.len;
+      ctx.strokeStyle = 'rgba(0,180,110,.35)'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(seta.x, seta.y); ctx.lineTo(tx, ty); ctx.stroke();
+
+      // Spatula fan from tip
+      const tipCount = 4 + (si % 3);
+      for (let ti = 0; ti < tipCount; ti++) {
+        const spread  = ((ti / (tipCount - 1)) - 0.5) * 0.7;
+        const fanAng  = seta.angle + spread;
+        const fanLen  = seta.len * 0.28;
+        const fx2     = tx + Math.cos(fanAng) * fanLen;
+        const fy2     = ty - Math.sin(Math.abs(fanAng)) * fanLen;
+
+        // Branch line
+        ctx.strokeStyle = 'rgba(0,220,145,.45)'; ctx.lineWidth = 0.7;
+        ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(fx2, fy2); ctx.stroke();
+
+        // Spatula pad — flattened ellipse contacting surface
+        const distToSurf = Math.abs(fy2 - surfY);
+        const contact    = clamp(1 - distToSurf / (H * 0.06), 0, 1);
+
+        ctx.save();
+        ctx.translate(fx2, fy2);
+        ctx.rotate(fanAng + Math.PI / 2);
+
+        const pw = 9 + contact * 4;
+        const ph = 4 + contact * 2;
+
+        // Glow for contacting spatulae
+        if (contact > 0.4) {
+          ctx.shadowColor = '#00f0a0';
+          ctx.shadowBlur  = 8 * contact;
+        }
+
+        const pg = ctx.createLinearGradient(-pw/2, 0, pw/2, 0);
+        pg.addColorStop(0,   `rgba(0,240,160,${0.15 + contact * 0.4})`);
+        pg.addColorStop(0.5, `rgba(0,240,160,${0.7  + contact * 0.25})`);
+        pg.addColorStop(1,   `rgba(0,240,160,${0.15 + contact * 0.4})`);
+
+        ctx.fillStyle = pg;
+        ctx.beginPath(); ctx.ellipse(0, 0, pw/2, ph/2, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
+      drawn++;
+    }
+
+    // Van der Waals force wisps between spatulae and surface
+    if (z > 7.5) {
+      const wispAlpha = ease(fade(z, 7.5, 9.5)) * 0.4;
+      ctx.strokeStyle = `rgba(42,180,255,${wispAlpha})`;
+      ctx.lineWidth   = 0.5;
+      ctx.setLineDash([2, 4]);
+      for (let x = W * 0.15; x < W * 0.85; x += 18) {
+        const sy2    = surfY - 3;
+        const ey     = surfY - 22 - Math.sin(x * 0.2 + S.t) * 6;
+        ctx.beginPath(); ctx.moveTo(x, sy2); ctx.lineTo(x, ey); ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+
+    ctx.restore(); // unscale
+    ctx.restore();
+
+    // Scale bar
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = 'rgba(0,240,160,.5)'; ctx.strokeStyle = 'rgba(0,240,160,.4)';
+    ctx.lineWidth = 1.5; ctx.font = '10px "JetBrains Mono","Courier New",monospace';
+    const bx = W - 130, by = H - 30, bw = 80;
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + bw, by);
+    ctx.moveTo(bx, by - 4); ctx.lineTo(bx, by + 4);
+    ctx.moveTo(bx + bw, by - 4); ctx.lineTo(bx + bw, by + 4); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillText('~200 nm', bx + bw/2, by - 8); ctx.textAlign = 'left';
+
+    // VdW equation box
+    if (z > 7) {
+      const eqA = ease(fade(z, 7, 8.5)) * alpha;
+      ctx.globalAlpha = eqA;
+      ctx.fillStyle = 'rgba(0,240,160,.08)';
+      ctx.strokeStyle = 'rgba(0,240,160,.28)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(14, H - 75, 220, 55, 10); ctx.fill(); ctx.stroke();
+      ctx.shadowColor = '#00f0a0'; ctx.shadowBlur = 8;
+      ctx.fillStyle   = 'rgba(0,240,160,.95)';
+      ctx.font = 'bold 14px "JetBrains Mono","Courier New",monospace';
+      ctx.fillText('F  ∝  1 / r⁶', 30, H - 50);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(0,240,160,.5)'; ctx.font = '10px "JetBrains Mono","Courier New",monospace';
+      ctx.fillText('Van der Waals — London dispersion force', 30, H - 33);
+    }
+
+    ctx.restore();
+  }
+
+  /* ── 9g. LEVEL LABEL ── */
+  function drawLabel(z) {
+    const idx = getLevelIndex(z);
+    const lv  = LEVELS[idx];
+    const W = S.W, H = S.H;
+
+    // Progress ring
+    const prog = fade(z, S.zoomMin, S.zoomMax);
+    ctx.strokeStyle = 'rgba(0,240,160,.18)';
+    ctx.lineWidth   = 2;
+    ctx.beginPath();
+    ctx.arc(W - 26, 26, 14, -Math.PI/2, -Math.PI/2 + prog * Math.PI * 2);
+    ctx.stroke();
+
+    // Level dot
+    ctx.fillStyle   = '#00f0a0';
+    ctx.shadowColor = '#00f0a0'; ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.arc(W - 26, 26, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Label pill
+    const pill = document.createElement('div'); // Can't easily do this in canvas for fonts
+    // Use canvas text instead:
+    ctx.fillStyle = 'rgba(3,16,26,.75)';
+    ctx.beginPath(); ctx.roundRect(12, 12, 240, 46, 10); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,240,160,.2)'; ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(0,240,160,.55)';
+    ctx.font = 'bold 9px "JetBrains Mono","Courier New",monospace';
+    ctx.fillText(`LEVEL ${idx + 1} / ${LEVELS.length}`, 22, 28);
+
+    ctx.fillStyle = '#d4e8f0';
+    ctx.font = 'bold 12px "JetBrains Mono","Courier New",monospace';
+    ctx.fillText(lv.label, 22, 44);
+
+    // Sub label beneath (smaller)
+    ctx.fillStyle = 'rgba(122,160,184,.65)';
+    ctx.font = '9px "JetBrains Mono","Courier New",monospace';
+    ctx.fillText(lv.sub, 14, H - 14);
+
+    // Zoom readout
+    ctx.fillStyle = 'rgba(0,240,160,.35)';
+    ctx.font = '9px "JetBrains Mono","Courier New",monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`×${z.toFixed(1)}`, W - 12, H - 14);
+    ctx.textAlign = 'left';
+  }
+
+  /* ── 9h. UPDATE DOTS ── */
+  function updateDots(z) {
+    const idx = getLevelIndex(z);
+    dots.forEach((d, i) => {
+      if (i === idx) {
+        d.style.background = '#00f0a0';
+        d.style.boxShadow  = '0 0 8px rgba(0,240,160,.7)';
+        d.style.transform  = 'scale(1.5)';
+      } else {
+        d.style.background = 'rgba(0,240,160,.18)';
+        d.style.boxShadow  = 'none';
+        d.style.transform  = 'scale(1)';
+      }
+    });
+  }
+
+  // ── 10. ANIMATION LOOP ──────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+
+    // Smooth zoom interpolation
+    S.zoom = lerp(S.zoom, S.zoomTarget, 0.09);
+    if (Math.abs(S.zoom - S.zoomTarget) < 0.001) S.zoom = S.zoomTarget;
+
+    const z = S.zoom;
+    S.t += 0.016;
+
+    // Draw all layers in order
+    drawBackground(z);
+    drawSurface(z);
+    drawLamellae(z);
+    drawSetae(z);
+    drawGeckoFoot(z);   // foot on top of lamellae (fades out first)
+    drawSpatulae(z);
+    drawLabel(z);
+    updateDots(z);
+  }
+
+  // Start after resize completes
+  setTimeout(() => { frame(); }, 50);
+
+})(); // end GeckoZoomModel IIFE
+</script>
+
+<!--
+═══════════════════════════════════════════════════════════════
+INTEGRATION INSTRUCTIONS
+═══════════════════════════════════════════════════════════════
+
+To embed in your existing page:
+
+1. Copy <div id="gecko-zoom-model"></div> where you want it.
+
+2. Copy the entire <script> block above and paste it
+   anywhere after that div (before </body> is fine).
+
+3. No CSS changes needed. All styles are inline.
+
+4. Interaction:
+     Mouse wheel    → zoom in/out
+     Click + drag ↕ → zoom in/out
+     Pinch (touch)  → zoom in/out
+     +/− buttons    → step zoom
+     Level dots     → jump to level
+
+5. To embed inside setae.html or any page using layout.js,
+   paste both the div and the script inside the
+   innerHTML string (after the page-content injection).
+═══════════════════════════════════════════════════════════════
+-->
+
+</body>
+</html>

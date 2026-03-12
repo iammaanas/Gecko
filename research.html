@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Research — Gecko Lab</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── filter bar ── */
+    .filter-bar {
+      display:flex;gap:.5rem;flex-wrap:wrap;
+      padding:1rem 0 1.5rem;
+      border-bottom:1px solid var(--border);
+      margin-bottom:1.8rem;
+      position:sticky;top:58px;z-index:10;
+      background:rgba(2,12,18,.94);
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+    }
+    .filter-btn {
+      font-family:var(--fm);font-size:.65rem;font-weight:600;
+      letter-spacing:.1em;text-transform:uppercase;
+      padding:.32rem .85rem;border-radius:4px;
+      border:1px solid var(--border);background:transparent;
+      color:var(--t3);cursor:pointer;transition:.18s var(--ease);
+    }
+    .filter-btn:hover{border-color:var(--border-2);color:var(--t1)}
+    .filter-btn.active{background:var(--teal-dim);border-color:var(--teal);color:var(--teal)}
+
+    /* ── search ── */
+    .search-wrap { position:relative;margin-bottom:1.5rem }
+    .search-wrap input {
+      width:100%;padding:.6rem 1rem .6rem 2.6rem;
+      border-radius:var(--r1);border:1px solid var(--border-2);
+      background:rgba(0,0,0,.3);color:var(--t1);
+      font-family:var(--fb);font-size:.92rem;outline:none;
+      transition:.2s;
+    }
+    .search-wrap input:focus{border-color:var(--teal);box-shadow:0 0 0 2px var(--teal-dim)}
+    .search-wrap::before {
+      content:'⌕';position:absolute;left:.85rem;top:50%;
+      transform:translateY(-50%);color:var(--t3);font-size:1.1rem;
+      pointer-events:none;
+    }
+
+    /* ── stats bar ── */
+    .stats-strip {
+      display:flex;gap:2.5rem;margin-bottom:2rem;
+      padding:.9rem 1.2rem;border-radius:var(--r2);
+      background:var(--bg-l1);border:1px solid var(--border);
+    }
+    .ss-item{display:flex;flex-direction:column;gap:.2rem}
+    .ss-num{font-family:var(--fm);font-size:1.3rem;font-weight:700;color:var(--teal);line-height:1}
+    .ss-lbl{font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+
+    /* ── paper cards ── */
+    .paper-card {
+      background:var(--bg-l1);border:1px solid var(--border);
+      border-radius:var(--r2);padding:1.7rem 2rem;
+      margin-bottom:.85rem;text-decoration:none;color:inherit;
+      display:block;transition:.28s var(--ease);
+      position:relative;overflow:hidden;
+    }
+    .paper-card:hover{border-color:var(--border-2);transform:translateX(5px);box-shadow:var(--teal-glow)}
+
+    /* left accent line */
+    .paper-card::before {
+      content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+      background:linear-gradient(180deg,var(--teal),var(--blue));
+      transform:scaleY(0);transform-origin:top;transition:.28s var(--ease);
+    }
+    .paper-card:hover::before{transform:scaleY(1)}
+
+    .paper-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.8rem;flex-wrap:wrap}
+    .paper-meta-group{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+    .py{font-family:var(--fm);font-size:.72rem;font-weight:700;color:var(--teal)}
+    .pj{font-family:var(--fm);font-size:.68rem;color:var(--t3);font-style:italic}
+    .paper-card h2{font-family:var(--fb);font-size:1.0rem;font-weight:500;margin-bottom:.5rem;line-height:1.45;color:var(--t1)}
+    .paper-card p{font-size:.86rem;color:var(--t2);line-height:1.65;margin-bottom:.8rem}
+    .paper-links{display:flex;gap:.45rem;flex-wrap:wrap}
+
+    /* quote pull */
+    .paper-quote {
+      margin:.8rem 0;padding:.7rem 1rem;
+      border-left:2px solid var(--teal-mid);
+      background:rgba(0,240,160,.04);border-radius:0 var(--r1) var(--r1) 0;
+      font-family:var(--fb);font-size:.82rem;font-style:italic;color:var(--t2);
+      line-height:1.6;
+    }
+
+    .hidden{display:none}
+    .paper-count{
+      font-family:var(--fm);font-size:.7rem;color:var(--t3);
+      margin-bottom:1rem;letter-spacing:.06em;
+    }
+  </style>
+</head>
+<body>
+<script src="js/layout.js"></script>
+<script>
+document.getElementById("page-content").innerHTML = `
+<div class="page-hero">
+  <div class="ph-top">
+    <span class="tag tag-teal">07 / Literature</span>
+    <span class="tag tag-amber">9 Papers · 4 Disciplines</span>
+  </div>
+  <h1>Research <em>Archive</em></h1>
+  <p style="max-width:560px">
+    The peer-reviewed foundation beneath this entire field — from the 2000 Nature paper that first
+    measured a single seta, to NASA's ISS gripper reports. Filter by discipline or search by keyword.
+  </p>
+</div>
+
+<div class="stats-strip reveal">
+  <div class="ss-item"><span class="ss-num">9</span><span class="ss-lbl">Papers</span></div>
+  <div class="ss-item"><span class="ss-num">2000–21</span><span class="ss-lbl">Date range</span></div>
+  <div class="ss-item"><span class="ss-num">4</span><span class="ss-lbl">Disciplines</span></div>
+  <div class="ss-item"><span class="ss-num">6</span><span class="ss-lbl">Journals</span></div>
+</div>
+
+<div class="search-wrap reveal">
+  <input type="text" id="searchInput" placeholder="Search papers, authors, journals…" autocomplete="off">
+</div>
+
+<div class="filter-bar reveal">
+  <button class="filter-btn active" data-filter="all">All</button>
+  <button class="filter-btn" data-filter="fundamental">Fundamental Physics</button>
+  <button class="filter-btn" data-filter="biology">Biology</button>
+  <button class="filter-btn" data-filter="robotics">Robotics</button>
+  <button class="filter-btn" data-filter="medical">Medical</button>
+  <button class="filter-btn" data-filter="materials">Materials</button>
+  <button class="filter-btn" data-filter="space">Space</button>
+</div>
+
+<div class="paper-count" id="paperCount">Showing 9 of 9 papers</div>
+
+<div id="paperList">
+
+  <a class="paper-card reveal" href="https://www.nature.com/articles/35079073" target="_blank"
+     data-cat="fundamental" data-search="autumn 2000 nature seta force van der waals adhesive single foot-hair measurement">
+    <div class="paper-head">
+      <div class="paper-meta-group">
+        <span class="py">2000</span>
+        <span class="pj">Nature</span>
+        <span class="tag tag-teal">Fundamental</span>
+      </div>
+      <span style="font-family:var(--fm);font-size:.65rem;color:var(--t4)">doi:10.1038/35079073</span>
+    </div>
+    <h2>Autumn et al. — Adhesive Force of a Single Gecko Foot-Hair</h2>
+    <p>First direct measurement of a single seta's adhesive force using a micro-fabricated cantilever sensor. Individual setae produced up to <strong style="color:var(--t1)">200 µN shear force</strong> (194 µN measured; ~40 µN normal adhesion) — far exceeding predictions from capillary or suction models. The data pointed unmistakably at van der Waals forces as the origin. This paper launched the modern field of gecko biomimicry.</p>
+    <div class="paper-quote">"The adhesive force was … consistent with van der Waals forces." — Autumn et al., Nature 2000</div>
+    <div class="paper-links">
+      <span class="plink plink-p">↗ Nature.com</span>
+      <span class="plink plink-s">↗ ACS Explainer</span>
+    </div>
+  </a>
+
+  <a class="paper-card reveal reveal-delay-1" href="https://www.pnas.org/doi/10.1073/pnas.192252799" target="_blank"
+     data-cat="fundamental" data-search="autumn 2002 pnas evidence van der waals gecko setae hydrophobic hydrophilic vacuum">
+    <div class="paper-head">
+      <div class="paper-meta-group">
+        <span class="py">2002</span>
+        <span class="pj">PNAS</span>
+        <span class="tag tag-teal">Fundamental</span>
+      </div>
+      <span style="font-family:var(--fm);font-size:.65rem;color:var(--t4)">doi:10.1073/pnas.192252799</span>
+    </div>
+    <h2>Autumn et al. — Evidence for Van der Waals Adhesion in Gecko Setae</h2>
+    <p>The definitive confirmation. By measuring adhesion on both hydrophobic (PTFE) and hydrophilic (GaAs) surfaces — and in nitrogen atmosphere — the team ruled out capillary, suction, and electrostatic mechanisms. The grip is identical across all conditions. Works in vacuum: a critical result for space applications.</p>
+    <div class="paper-quote">"Adhesion is consistent only with van der Waals forces, which are independent of surface energy." — Autumn et al., PNAS 2002</div>
+    <div class="paper-links">
+      <span class="plink plink-p">↗ PNAS</span>
+      <span class="plink plink-s">↗ BBC Coverage</span>
+    </div>
+  </a>
+
+  <a class="paper-card reveal" href="https://www.pnas.org/doi/10.1073/pnas.0408424102" target="_blank"
+     data-cat="biology" data-search="hansen 2005 pnas self-cleaning gecko setae contamination particles hydrophobic keratin">
+    <div class="paper-head">
+      <div class="paper-meta-group">
+        <span class="py">2005</span>
+        <span class="pj">PNAS</span>
+        <span class="tag tag-green">Biology</span>
+      </div>
+      <span style="font-family:var(--fm);font-size:.65rem;color:var(--t4)">doi:10.1073/pnas.0408424102</span>
+    </div>
+    <h2>Hansen et al. — Self-Cleaning in Gecko Feet</h2>
+    <p>Explains why geckos don't get dirty feet: contaminant particles have higher adhesion energy to most surfaces than to hydrophobic β-keratin setae. During normal walking, particles preferentially transfer away from the toe pad — a thermodynamically passive self-cleaning mechanism that synthetic systems still cannot replicate.</p>
+    <div class="paper-links">
+      <span class="plink plink-p">↗ PNAS</span>
+    </div>
+  </a>
+
+  <a class="paper-card reveal reveal-delay-1" href="https://www.pnas.org/doi/10.1073/pnas.0409029101" target="_blank"
+     data-cat="biology" data-search="arzt 2006 pnas micro nano contacts biological attachment scaling climbing insects">
+    <div class="paper-head">
+      <div class="paper-meta-group">
+        <span class="py">2006</span>
+        <span class="pj">PNAS</span>
+        <span class="tag tag-green">Biology</span>
+      </div>
+    </div>
+    <h2>Arzt et al. — From Micro to Nano Contacts in Biological Attachment Devices</h2>
+    <p>Cross-species comparative study spanning geckos, spiders, beetles, and flies. Reveals a universal scaling law: smaller animals have finer contact elements relative to body size. This convergent evolution toward nanoscale contact is the strongest evidence that van der Waals adhesion is an evolutionary optimum — not a gecko accident.</p>
+    <div class="paper-links">
+      <span class="plink plink-p">↗ PNAS</span>
+      <span class="plink plink-s">↗ ScienceDirect</span>
+    </div>
+  </a>
+
+  <a class="paper-card reveal" href="https://www.science.org/doi/10.1126/science.1146885" target="_blank"
+     data-cat="robotics" data-search="kim stickybot stanford 2008 science climbing robot directional adhesion glass acrylic cutkosky">
+    <div class="paper-head">
+      <div class="paper-meta-group">
+        <span class="py">2008</span>
+        <span class="pj">Science</span>
+        <span class="tag tag-blue">Robotics</span>
+      </div>
+      <span style="font-family:var(--fm);font-size:.65rem;color:var(--t4)">doi:10.1126/science.1146885</span>
+    </div>
+    <h2>Kim et al. — Whole Body Adhesion: Hierarchical, Directional Control (Stickybot)</h2>
+    <p>The Stickybot paper. Stanford's climbing robot uses directional synthetic elastomer setae — angled arrays that adhere strongly when loaded parallel to the surface and detach cleanly when the foot rolls. The first proof that directional gecko adhesion could support robotic locomotion on smooth vertical surfaces at 3 cm/s.</p>
+    <div class="paper-links">
+      <span class="plink plink-p">↗ Science.org</span>
+      <span class="plink plink-s">↗ Stanford News</span>
+      <span class="plink plink-s">↗ MIT News</span>
+    </div>
+  </a>
+
+  <a class="paper-card reveal reveal-delay-1" href="https://www.pnas.org/doi/10.1073/pnas.0712117105" target="_blank"
+     data-cat="medical" data-search="mahdavi harvard 2008 pnas biodegradable PGSA micropillar tissue adhesive wound suture bandage">
+    <div class="paper-head">
+      <div class="paper-meta-group">
+        <span class="py">2008</span>
+        <span class="pj">PNAS</span>
+        <span class="tag tag-green">Medical</span>
+      </div>
+      <span style="font-family:var(--fm);font-size:.65rem;color:var(--t4)">doi:10.1073/pnas.0712117105</span>
+    </div>
+    <h2>Mahdavi et al. — A Biodegradable and Biocompatible Gecko-Inspired Tissue Adhesive</h2>
+    <p>Harvard Langer Lab introduces PGSA (poly-glycerol-sebacate-acrylate) micropillar bandages. Works on wet tissue without chemical irritation. Pain-free removal. Biodegradable in 4–8 weeks with no inflammatory response — surpassing all metrics of traditional surgical adhesives. Still the gold standard for gecko-inspired medical adhesion.</p>
+    <div class="paper-links">
+      <span class="plink plink-p">↗ PNAS</span>
+      <span class="plink plink-s">↗ Nature Search</span>
+      <span class="plink plink-s">↗ Harvard Wyss</span>
+    </div>
+  </a>
+
+  <a class="paper-card reveal" href="https://onlinelibrary.wiley.com/doi/10.1002/adma.201103704" target="_blank"
+     data-cat="materials" data-search="bartlett geckskin 2012 advanced materials umass 317kg crosby irschick tendon fabric elastomer">
+    <div class="paper-head">
+      <div class="paper-meta-group">
+        <span class="py">2012</span>
+        <span class="pj">Advanced Materials</span>
+        <span class="tag tag-purple">Materials</span>
+      </div>
+    </div>
+    <h2>Bartlett et al. — Looking Beyond Fibrillar Features to Scale Gecko-Like Adhesion (Geckskin)</h2>
+    <p>Geckskin's foundational paper. Instead of replicating only the setae, Crosby and Irschick replicated the gecko's <em>tendon geometry</em> — stiff woven fabric in soft elastomer — to spread stress uniformly across the pad. A 3×4 inch patch held <strong style="color:var(--t1)">317 kg on glass</strong>, then peeled clean. Still the strongest reversible dry adhesive ever demonstrated.</p>
+    <div class="paper-quote">"By replicating the structural hierarchy of the gecko limb rather than just the setae, we achieved load capacities orders of magnitude beyond previous synthetic adhesives."</div>
+    <div class="paper-links">
+      <span class="plink plink-p">↗ Wiley Online</span>
+      <span class="plink plink-s">↗ UMass News</span>
+    </div>
+  </a>
+
+  <a class="paper-card reveal reveal-delay-1" href="https://royalsocietypublishing.org/doi/10.1098/rsif.2014.1085" target="_blank"
+     data-cat="robotics" data-search="hawkes 2015 royal society human climbing gecko hand pads 70kg glass Stanford directional scaling">
+    <div class="paper-head">
+      <div class="paper-meta-group">
+        <span class="py">2015</span>
+        <span class="pj">J. Royal Society Interface</span>
+        <span class="tag tag-blue">Robotics</span>
+      </div>
+    </div>
+    <h2>Hawkes et al. — Human Climbing with Efficiently Scaled Gecko-Inspired Dry Adhesives</h2>
+    <p>First adult human to climb a vertical glass wall using only gecko-adhesive hand pads — no suction, no mechanical locks. 70 kg climber, 24 adhesive tiles, directional loading protocol. Solved the scaling paradox: larger patches concentrate stress at edges and fail, but tiling and directional control overcomes this. A watershed moment for wearable adhesion.</p>
+    <div class="paper-links">
+      <span class="plink plink-p">↗ Royal Society</span>
+      <span class="plink plink-s">↗ Stanford News</span>
+    </div>
+  </a>
+
+  <a class="paper-card reveal" href="https://www.nasa.gov/missions/station/gecko-grippers-moving-on-up/" target="_blank"
+     data-cat="space" data-search="nasa 2021 gecko grippers ISS space station satellite vacuum microgravity astrobee">
+    <div class="paper-head">
+      <div class="paper-meta-group">
+        <span class="py">2021</span>
+        <span class="pj">NASA Technical Report</span>
+        <span class="tag tag-purple">Space</span>
+      </div>
+    </div>
+    <h2>NASA — Gecko Grippers Tested Aboard the International Space Station</h2>
+    <p>Operational validation of gecko adhesion in space. Dedicated end-effector grippers tested on the ISS for satellite servicing — conforming to curved surfaces, operating in full vacuum, functional from −150°C to +120°C. Combined with the Astrobee deployment (2019), this confirms gecko adhesion as the leading dry-adhesion technology for on-orbit applications.</p>
+    <div class="paper-links">
+      <span class="plink plink-p">↗ NASA Official</span>
+      <span class="plink plink-s">↗ Astrobee Program</span>
+    </div>
+  </a>
+
+</div>
+`;
+
+// ── Live filter + search ──────────────────────────────────────────
+const cards    = document.querySelectorAll(".paper-card");
+const filterBtns = document.querySelectorAll(".filter-btn");
+const searchInput = document.getElementById("searchInput");
+const countEl  = document.getElementById("paperCount");
+
+let activeFilter = "all";
+let searchQuery  = "";
+
+function applyFilters() {
+  let visible = 0;
+  cards.forEach(card => {
+    const catMatch  = activeFilter === "all" || card.dataset.cat === activeFilter;
+    const searchStr = (card.dataset.search + " " + card.textContent).toLowerCase();
+    const qMatch    = !searchQuery || searchStr.includes(searchQuery);
+    const show      = catMatch && qMatch;
+    card.style.display = show ? "" : "none";
+    if (show) visible++;
+  });
+  countEl.textContent = "Showing " + visible + " of " + cards.length + " papers";
+}
+
+filterBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    filterBtns.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeFilter = btn.dataset.filter;
+    applyFilters();
+  });
+});
+
+searchInput.addEventListener("input", () => {
+  searchQuery = searchInput.value.toLowerCase().trim();
+  applyFilters();
+});
+</script>
+</body>
+</html>

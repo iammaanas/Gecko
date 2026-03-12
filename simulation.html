@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Simulation — Gecko Lab</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .main-content{max-width:1340px}
+    .sim-wrapper{display:grid;grid-template-columns:minmax(310px,390px) 1fr;gap:1.4rem;align-items:stretch}
+    .sim-controls{background:var(--bg-l1);border:1px solid var(--border);border-radius:var(--r2);padding:1.5rem;overflow-y:auto;max-height:680px}
+    .sim-visual{min-height:580px;background:var(--bg-l1);border:1px solid var(--border);border-radius:var(--r2);padding:.7rem;display:flex;flex-direction:column}
+    #simCanvas{width:100%;flex:1;display:block;border-radius:10px;background:linear-gradient(180deg,#030f18,#020c14)}
+    @media(max-width:900px){.sim-wrapper{grid-template-columns:1fr}.sim-visual{min-height:400px}}
+
+    /* ── Roughness selector ── */
+    .surf-grid{display:grid;grid-template-columns:1fr 1fr;gap:.35rem;margin-top:.4rem}
+    .surf-btn{
+      padding:.5rem .3rem;border-radius:var(--r1);
+      border:1px solid var(--border);background:transparent;
+      color:var(--t2);cursor:pointer;transition:.2s var(--ease);
+      font-size:.72rem;font-family:var(--fb);text-align:center;line-height:1.3;
+    }
+    .surf-btn:hover{border-color:var(--border-2);color:var(--t1)}
+    .surf-btn.active{border-color:var(--teal);background:var(--teal-dim);color:var(--teal)}
+    .surf-rc{font-family:var(--fm);font-size:.6rem;color:var(--t4);display:block;margin-top:.1rem}
+    .surf-btn.active .surf-rc{color:rgba(0,240,160,.5)}
+
+    /* ── Formula box ── */
+    .formula-box{
+      margin-top:.8rem;padding:.8rem 1rem;border-radius:var(--r1);
+      background:rgba(0,0,0,.28);border:1px solid var(--border);
+      font-family:var(--fm);font-size:.8rem;color:var(--t2);line-height:1.8;
+    }
+    .formula-box .fvar{color:var(--teal);font-weight:700}
+    .formula-box .fval{color:var(--amber);font-weight:700}
+    .formula-row{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+    .formula-row:not(:last-child){border-bottom:1px solid rgba(255,255,255,.04);padding-bottom:.35rem;margin-bottom:.35rem}
+
+    /* ── Safety bar ── */
+    .safety-bar-wrap{height:6px;background:rgba(255,255,255,.06);border-radius:3px;margin:.6rem 0;overflow:hidden}
+    .safety-bar-fill{height:100%;border-radius:3px;transition:width .3s var(--ease),background .3s}
+  </style>
+</head>
+<body>
+<script src="js/layout.js"></script>
+<script>
+document.getElementById("main-content").style.maxWidth = "1340px";
+document.getElementById("page-content").innerHTML = `
+<div class="page-hero">
+  <div class="ph-top">
+    <span class="tag tag-teal">03 / Simulation</span>
+    <span class="tag tag-blue">Hamaker Theory · F=σA · Safety Factor</span>
+    <span class="tag tag-amber">5 Adhesive Types · 5 Surfaces</span>
+  </div>
+  <h1>Adhesive <em>Load Simulation</em></h1>
+  <p style="max-width:620px">
+    Physically accurate adhesion modelling using the <strong style="color:var(--t1)">effective adhesive stress model</strong>
+    (F = σ·A·R<sub>c</sub>) with surface roughness correction and a 2× engineering safety factor.
+    All constants sourced from peer-reviewed literature.
+  </p>
+</div>
+
+<div class="sim-wrapper reveal">
+
+  <!-- ── LEFT: CONTROLS ─────────────────────────────────────────── -->
+  <div class="sim-controls">
+
+    <!-- Adhesive type -->
+    <div class="ctrl-head">Adhesive Type</div>
+    <div class="adh-grid" id="adhesiveGrid">
+      <button class="adh-btn active" data-type="gecko">
+        <span class="adh-icon">🦎</span>Gecko Tape<span class="adh-sigma">σ = 100 kPa</span>
+      </button>
+      <button class="adh-btn" data-type="tape">
+        <span class="adh-icon">📼</span>Normal Tape<span class="adh-sigma">σ = 30 kPa</span>
+      </button>
+      <button class="adh-btn" data-type="velcro">
+        <span class="adh-icon">🪡</span>Velcro<span class="adh-sigma">σ = 60 kPa</span>
+      </button>
+      <button class="adh-btn" data-type="glue">
+        <span class="adh-icon">🔵</span>Super Glue<span class="adh-sigma">σ = 1.5 MPa</span>
+      </button>
+      <button class="adh-btn" data-type="suction">
+        <span class="adh-icon">🫧</span>Suction Cup<span class="adh-sigma">≤ 70 kPa</span>
+      </button>
+    </div>
+
+    <!-- Surface roughness -->
+    <div class="ctrl-head" style="margin-top:1rem">Surface Material</div>
+    <p style="font-size:.78rem;color:var(--t3);margin-bottom:.5rem;line-height:1.5">
+      Contact efficiency R<sub>c</sub> accounts for surface roughness reducing real contact area.
+    </p>
+    <div class="surf-grid" id="surfaceGrid">
+      <button class="surf-btn active" data-surf="glass"   data-rc="0.95">🪟 Glass<span class="surf-rc">Rc = 0.95</span></button>
+      <button class="surf-btn"        data-surf="metal"   data-rc="0.85">🔩 Polished Metal<span class="surf-rc">Rc = 0.85</span></button>
+      <button class="surf-btn"        data-surf="plastic" data-rc="0.75">🧴 Plastic<span class="surf-rc">Rc = 0.75</span></button>
+      <button class="surf-btn"        data-surf="painted" data-rc="0.65">🎨 Painted Wall<span class="surf-rc">Rc = 0.65</span></button>
+      <button class="surf-btn"        data-surf="concrete"data-rc="0.40">🧱 Concrete<span class="surf-rc">Rc = 0.40</span></button>
+    </div>
+
+    <!-- Gravity environment -->
+    <div class="ctrl-head" style="margin-top:1rem">Environment</div>
+    <div class="preset-grid">
+      <button class="preset-btn preset-g active" data-g="9.81">🌍 Earth 9.81</button>
+      <button class="preset-btn preset-g"        data-g="3.71">🔴 Mars 3.71</button>
+      <button class="preset-btn preset-g"        data-g="1.62">🌕 Moon 1.62</button>
+      <button class="preset-btn preset-g"        data-g="0.001">🛸 ISS ≈0</button>
+    </div>
+    <label class="ctrl-label" style="margin-top:.5rem">Manual gravity (m/s²)</label>
+    <div class="gravity-manual">
+      <input id="gravityInput" type="number" value="9.81" min="0" max="30" step="0.01">
+      <span>m/s²</span>
+    </div>
+
+    <!-- Mass -->
+    <div class="ctrl-head" style="margin-top:1rem">Mass</div>
+    <div class="preset-grid">
+      <button class="preset-btn" data-mass="0.18">📱 0.18 kg</button>
+      <button class="preset-btn" data-mass="2">💻 2 kg</button>
+      <button class="preset-btn active" data-mass="8">🎒 8 kg</button>
+      <button class="preset-btn" data-mass="70">🧍 70 kg</button>
+    </div>
+    <label class="ctrl-label" style="margin-top:.5rem">Manual mass (kg)</label>
+    <input id="massInput" type="number" value="8" min="0.001" step="0.1">
+
+    <!-- Contact area -->
+    <div class="ctrl-head" style="margin-top:1rem">Contact Parameters</div>
+    <div class="ctrl-section">
+      <div style="display:flex;justify-content:space-between;margin-bottom:.45rem">
+        <span style="font-family:var(--fm);font-size:.72rem;color:var(--t2)">Contact area A</span>
+        <strong style="font-family:var(--fm);font-size:.72rem;color:var(--teal)"><span id="areaValue">10</span> cm²</strong>
+      </div>
+      <input id="areaSlider" type="range" min="1" max="200" value="10">
+    </div>
+
+    <!-- Formula live panel -->
+    <div class="formula-box" id="formulaBox">
+      <div class="formula-row">
+        <span>F = σ · A · R<sub>c</sub></span>
+        <span class="fval" id="fAdh">—</span>
+      </div>
+      <div class="formula-row">
+        <span>W = m · g</span>
+        <span class="fval" id="fWeight">—</span>
+      </div>
+      <div class="formula-row">
+        <span>F<sub>req</sub> = 2 · W <span style="font-size:.68rem;color:var(--t4)">(SF=2)</span></span>
+        <span class="fval" id="fReq">—</span>
+      </div>
+      <div class="formula-row" style="margin-top:.4rem">
+        <span>Safety margin</span>
+        <span class="fval" id="fSafety">—</span>
+      </div>
+      <div class="safety-bar-wrap">
+        <div class="safety-bar-fill" id="safetyBar" style="width:50%;background:var(--teal)"></div>
+      </div>
+      <div class="formula-row">
+        <span>Max mass @ params</span>
+        <span class="fval" id="fMax">—</span>
+      </div>
+    </div>
+
+    <div class="warning-banner" id="warningBanner"></div>
+  </div>
+
+  <!-- ── RIGHT: CANVAS ──────────────────────────────────────────── -->
+  <div class="sim-visual">
+    <canvas id="simCanvas"></canvas>
+  </div>
+</div>
+
+<!-- ── PHYSICS REFERENCE ───────────────────────────────────────── -->
+<div class="section-rule reveal"><span>Physics Reference</span></div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-bottom:3rem">
+
+  <div class="card reveal" style="border-color:rgba(0,240,160,.14)">
+    <div class="ctrl-head">Adhesive Stress Model</div>
+    <p style="font-size:.85rem;margin-bottom:.8rem">
+      Without modelling individual setae, adhesion force is expressed as effective stress
+      across contact area — the macroscopic limit of summing millions of van der Waals contacts.
+    </p>
+    <div style="font-family:var(--fm);font-size:.8rem;background:rgba(0,0,0,.25);padding:.7rem;border-radius:var(--r1);color:var(--teal)">
+      F<sub>adhesion</sub> = σ × A × R<sub>c</sub>
+    </div>
+    <p style="font-size:.78rem;color:var(--t3);margin-top:.6rem">σ = adhesive stress (Pa) · A = contact area (m²) · R<sub>c</sub> = roughness coefficient</p>
+  </div>
+
+  <div class="card reveal reveal-delay-1" style="border-color:rgba(0,240,160,.14)">
+    <div class="ctrl-head">Hamaker Reference (Single Seta)</div>
+    <p style="font-size:.85rem;margin-bottom:.8rem">
+      At the seta level, the Hamaker equation describes van der Waals interaction between
+      a sphere (spatula tip) and a flat surface:
+    </p>
+    <div style="font-family:var(--fm);font-size:.8rem;background:rgba(0,0,0,.25);padding:.7rem;border-radius:var(--r1);color:var(--teal)">
+      F = (A·R) / (6·D²)
+    </div>
+    <p style="font-size:.78rem;color:var(--t3);margin-top:.6rem">
+      A = 1×10⁻¹⁹ J (Hamaker const.) · R = spatula radius · D ≈ 0.3–0.4 nm (contact gap)<br>
+      Yields ~200 nN per seta — consistent with Autumn et al., Nature 2000
+    </p>
+  </div>
+
+  <div class="card reveal reveal-delay-2" style="border-color:rgba(0,240,160,.14)">
+    <div class="ctrl-head">Safety Factor Logic</div>
+    <p style="font-size:.85rem;margin-bottom:.8rem">
+      Engineering designs require adhesive force to exceed the load by a safety factor of 2 —
+      accounting for variable conditions, fatigue, and contamination.
+    </p>
+    <div style="font-family:var(--fm);font-size:.8rem;background:rgba(0,0,0,.25);padding:.7rem;border-radius:var(--r1);color:var(--teal)">
+      F<sub>required</sub> = 2 × m × g
+    </div>
+    <p style="font-size:.78rem;color:var(--t3);margin-top:.6rem">
+      <span style="color:var(--green)">● Safe:</span> F<sub>adh</sub> ≥ F<sub>req</sub> &nbsp;
+      <span style="color:var(--amber)">● Marginal:</span> F<sub>adh</sub> ≥ W &nbsp;
+      <span style="color:var(--red)">● Fail:</span> F<sub>adh</sub> &lt; W
+    </p>
+  </div>
+
+  <div class="card reveal" style="border-color:rgba(0,240,160,.14)">
+    <div class="ctrl-head">Peer-Reviewed σ Values</div>
+    <table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-top:.4rem">
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.45rem .3rem;color:var(--t2)">Gecko synthetic tape</td>
+        <td style="padding:.45rem .3rem;color:var(--amber);font-family:var(--fm);text-align:right">100 kPa</td>
+        <td style="padding:.45rem .3rem;color:var(--t4);font-size:.7rem">Autumn 2002</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.45rem .3rem;color:var(--t2)">PSA normal tape</td>
+        <td style="padding:.45rem .3rem;color:var(--amber);font-family:var(--fm);text-align:right">30 kPa</td>
+        <td style="padding:.45rem .3rem;color:var(--t4);font-size:.7rem">Kinloch 1994</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.45rem .3rem;color:var(--t2)">Velcro</td>
+        <td style="padding:.45rem .3rem;color:var(--amber);font-family:var(--fm);text-align:right">60 kPa</td>
+        <td style="padding:.45rem .3rem;color:var(--t4);font-size:.7rem">Velcro Industries</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.45rem .3rem;color:var(--t2)">Cyanoacrylate</td>
+        <td style="padding:.45rem .3rem;color:var(--amber);font-family:var(--fm);text-align:right">1.5 MPa</td>
+        <td style="padding:.45rem .3rem;color:var(--t4);font-size:.7rem">ASTM D1002</td>
+      </tr>
+      <tr>
+        <td style="padding:.45rem .3rem;color:var(--t2)">Suction (atm.)</td>
+        <td style="padding:.45rem .3rem;color:var(--amber);font-family:var(--fm);text-align:right">≤70 kPa</td>
+        <td style="padding:.45rem .3rem;color:var(--t4);font-size:.7rem">P<sub>atm</sub>×η</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card reveal reveal-delay-1" style="border-color:rgba(0,240,160,.14)">
+    <div class="ctrl-head">Roughness Coefficients R<sub>c</sub></div>
+    <table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-top:.4rem">
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.45rem .3rem;color:var(--t2)">Glass</td>
+        <td style="padding:.45rem .3rem;color:var(--teal);font-family:var(--fm);text-align:right">0.95</td>
+        <td style="padding:.45rem .3rem;color:var(--t4);font-size:.7rem">R<sub>a</sub> &lt; 1 nm</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.45rem .3rem;color:var(--t2)">Polished metal</td>
+        <td style="padding:.45rem .3rem;color:var(--teal);font-family:var(--fm);text-align:right">0.85</td>
+        <td style="padding:.45rem .3rem;color:var(--t4);font-size:.7rem">R<sub>a</sub> ≈ 10 nm</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.45rem .3rem;color:var(--t2)">Plastic polymer</td>
+        <td style="padding:.45rem .3rem;color:var(--teal);font-family:var(--fm);text-align:right">0.75</td>
+        <td style="padding:.45rem .3rem;color:var(--t4);font-size:.7rem">R<sub>a</sub> ≈ 100 nm</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.45rem .3rem;color:var(--t2)">Painted wall</td>
+        <td style="padding:.45rem .3rem;color:var(--teal);font-family:var(--fm);text-align:right">0.65</td>
+        <td style="padding:.45rem .3rem;color:var(--t4);font-size:.7rem">R<sub>a</sub> ≈ 1 μm</td>
+      </tr>
+      <tr>
+        <td style="padding:.45rem .3rem;color:var(--t2)">Concrete</td>
+        <td style="padding:.45rem .3rem;color:var(--teal);font-family:var(--fm);text-align:right">0.40</td>
+        <td style="padding:.45rem .3rem;color:var(--t4);font-size:.7rem">R<sub>a</sub> ≈ 100 μm</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card reveal reveal-delay-2" style="border-color:rgba(0,240,160,.14)">
+    <div class="ctrl-head">Constants Used</div>
+    <div style="font-family:var(--fm);font-size:.78rem;line-height:2.1;color:var(--t2)">
+      <div><span style="color:var(--teal)">g</span> = 9.81 m/s² (Earth gravity)</div>
+      <div><span style="color:var(--teal)">A</span> = 1×10⁻¹⁹ J (Hamaker const., β-keratin/glass)</div>
+      <div><span style="color:var(--teal)">D</span> = 0.3–0.4 nm (spatula–surface gap)</div>
+      <div><span style="color:var(--teal)">σ<sub>gecko</sub></span> = 100 kPa (Autumn et al., 2002)</div>
+      <div><span style="color:var(--teal)">SF</span> = 2× (engineering safety factor)</div>
+      <div><span style="color:var(--teal)">F<sub>seta</sub></span> ≈ 200 nN (measured per seta)</div>
+    </div>
+  </div>
+
+</div>
+`;
+
+const _s = document.createElement('script');
+_s.src = 'js/simulation.js';
+document.body.appendChild(_s);
+</script>
+</body>
+</html>
