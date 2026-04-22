@@ -1,8 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Presentation</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Presentation — Gecko Lab</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .pdf-frame {
+            width: 100%;
+            height: 82vh;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            background: #0b1620;
+        }
+
+        .pdf-fallback {
+            margin-top: 12px;
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .pdf-fallback a {
+            color: var(--teal);
+            text-decoration: none;
+        }
+
+        .pdf-fallback a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
 
@@ -28,10 +55,13 @@ document.getElementById("page-content").innerHTML = `
     <a class="btn btn-ghost" href="Final Gecko.pdf" download style="font-size:.65rem;padding:.35rem .8rem">↓ Download PDF</a>
   </div>
   <iframe
-    src="Final Gecko.pdf"
-    style="width:100%;height:82vh;border:1px solid var(--border);border-radius:10px;background:#111"
+    class="pdf-frame"
+    src="Final%20Gecko.pdf"
     title="Final Gecko Presentation PDF"
   ></iframe>
+  <p class="pdf-fallback">
+    If the PDF does not load, <a href="Final Gecko.pdf" target="_blank" rel="noopener noreferrer">open Final Gecko.pdf</a>.
+  </p>
 </div>
 `;
 </script>
