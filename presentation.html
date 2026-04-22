@@ -1,21 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Presentation</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .pdf-frame {
+            width: 100%;
+            height: 80vh;
+            border: 0;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #0b1620;
+        }
+
+        .pdf-fallback {
+            margin-top: 12px;
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .pdf-fallback a {
+            color: #7dd3fc;
+            text-decoration: none;
+        }
+
+        .pdf-fallback a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
 
 <script src="js/layout.js"></script>
 
 <script>
-document.getElementById("page-content").innerHTML = `
-<h1>Project Presentation</h1>
+window.addEventListener("DOMContentLoaded", () => {
+    const pageContent = document.getElementById("page-content");
 
-<div class="card">
-    <p>Presentation PDF will be embedded here.</p>
-</div>
-`;
+    if (!pageContent) return;
+
+    pageContent.innerHTML = `
+        <h1>Project Presentation</h1>
+
+        <div class="card" style="padding: 16px;">
+            <iframe
+                class="pdf-frame"
+                src="Final%20Gecko.pdf"
+                title="Final Gecko Presentation PDF">
+            </iframe>
+
+            <p class="pdf-fallback">
+                If the PDF does not load, <a href="Final Gecko.pdf" target="_blank" rel="noopener noreferrer">open Final Gecko.pdf</a>.
+            </p>
+        </div>
+    `;
+});
 </script>
 
 </body>
