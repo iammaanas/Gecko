@@ -10,10 +10,28 @@
 
 <script>
 document.getElementById("page-content").innerHTML = `
-<h1>Project Presentation</h1>
+<div class="page-hero">
+  <div class="ph-top">
+    <span class="tag tag-teal">09 / Presentation</span>
+    <span class="tag tag-amber">30 Slides</span>
+  </div>
+  <h1>Project <em>Presentation</em></h1>
+  <p style="max-width:580px">
+    The complete Final Gecko research presentation — covering adhesion science,
+    applications, and future directions.
+  </p>
+</div>
 
-<div class="card">
-    <p>Presentation PDF will be embedded here.</p>
+<div class="card" style="padding:1rem;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;padding:0 .5rem">
+    <span style="font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)">◆ Final Gecko.pdf</span>
+    <a class="btn btn-ghost" href="Final Gecko.pdf" download style="font-size:.65rem;padding:.35rem .8rem">↓ Download PDF</a>
+  </div>
+  <iframe
+    src="Final Gecko.pdf"
+    style="width:100%;height:82vh;border:1px solid var(--border);border-radius:10px;background:#111"
+    title="Final Gecko Presentation PDF"
+  ></iframe>
 </div>
 `;
 </script>
